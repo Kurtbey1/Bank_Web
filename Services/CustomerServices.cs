@@ -3,37 +3,67 @@ using Bank_Project.DTOs;
 using Bank_Project.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
 namespace Bank_Project.Services
 {
-    public class CustomerServices: ICustomerServices
+    public class CustomerServices : ICustomerServices
     {
         private readonly AppDbContext _context;
-        private readonly PasswordHasher < Accounts > _accountHasher = new();
-        private readonly PasswordHasher < Cards > _cardHasher = new();
-        public CustomerServices(AppDbContext context)
+        private readonly IAccountService _accountService;
+        private readonly PasswordHasher<Cards> _cardHasher = new();
+
+        public CustomerServices(AppDbContext context, IAccountService accountService)
         {
-            _context = context;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
         }
-        public async Task < Customers > AddCustomerAsync(CreateCustomerDto customerDto, CreateAccountDto accountDto)
+
+        public async Task<Customers> AddCustomerAsync(CreateCustomerDto customerDto, CreateAccountDto accountDto)
         {
             ValidateCustomerDto(customerDto);
             ValidateAccountDto(accountDto);
+
             var branch = await _context.Branches.FindAsync(customerDto.BranchID);
             if (branch == null) throw new Exception("Branch not found");
-            using
-            var transaction = await _context.Database.BeginTransactionAsync();
+
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var customer = CreateCustomerEntity(customerDto);
+                // Create Customer
+                var customer = new Customers
+                {
+                    FirstName = customerDto.FirstName,
+                    SecondName = customerDto.SecondName,
+                    LastName = customerDto.LastName,
+                    PhoneNumber = customerDto.PhoneNumber,
+                    Address = customerDto.Address,
+                    Salary = customerDto.Salary
+                };
                 await _context.Customers.AddAsync(customer);
-                var account = CreateAccountEntity(accountDto, customer, branch);
-                account.PasswordHashed = _accountHasher.HashPassword(account, accountDto.CardPassword);
-                await _context.Accounts.AddAsync(account);
-                var card = CreateCardEntity(account, accountDto);
+                await _context.SaveChangesAsync();
+
+                // Create Account using AccountService
+                var account = await _accountService.CreateAccountAsync(accountDto, customer, branch);
+
+                // Create Card
+                var card = new Cards
+                {
+                    CardNumber = Cards.GenerateCardNumber(),
+                    CardType = accountDto.CardType,
+                    ExpiryDate = DateTime.Now.AddYears(5),
+                    CVV = Cards.GenerateCVV(),
+                    Account = account
+                };
                 card.PasswordHash = _cardHasher.HashPassword(card, accountDto.CardPassword);
                 await _context.Cards.AddAsync(card);
+
+                // Link card to account
                 account.Cards = card;
                 await _context.SaveChangesAsync();
+
                 await transaction.CommitAsync();
                 return customer;
             }
@@ -43,65 +73,46 @@ namespace Bank_Project.Services
                 throw;
             }
         }
-        public async Task < Customers ? > UpdateCustomerAsync(int id, Customers customer)
+
+        public async Task<Customers?> UpdateCustomerAsync(int id, Customers customer)
         {
             var existing = await _context.Customers.FindAsync(id);
             if (existing == null) throw new KeyNotFoundException($"Customer with id {id} not found.");
+
             existing.FirstName = customer.FirstName;
             existing.SecondName = customer.SecondName;
             existing.LastName = customer.LastName;
             existing.PhoneNumber = customer.PhoneNumber;
             existing.Address = customer.Address;
             existing.Salary = customer.Salary;
+
             await _context.SaveChangesAsync();
             return existing;
         }
-        public async Task < bool > DeleteCustomerAsync(int id)
+
+        public async Task<bool> DeleteCustomerAsync(int id)
         {
             var existing = await _context.Customers.FindAsync(id);
             if (existing == null) return false;
+
             _context.Customers.Remove(existing);
             await _context.SaveChangesAsync();
             return true;
         }
-        public async Task < List < Customers >> GetAllCustomersAsync()
+
+        public async Task<List<Customers>> GetAllCustomersAsync()
         {
             return await _context.Customers.ToListAsync();
         }
-        public async Task < Customers ? > GetCustomerByIdAsync(int id)
+
+        public async Task<Customers?> GetCustomerByIdAsync(int id)
         {
             var existing = await _context.Customers.FindAsync(id);
             if (existing == null) throw new KeyNotFoundException($"Customer with id {id} not found.");
             return existing;
         }
+
         // ========================= Helper Methods =========================
-        private static Customers CreateCustomerEntity(CreateCustomerDto dto) => new()
-        {
-            FirstName = dto.FirstName,
-                SecondName = dto.SecondName,
-                LastName = dto.LastName,
-                PhoneNumber = dto.PhoneNumber,
-                Address = dto.Address,
-                Salary = dto.Salary
-        };
-        private static Accounts CreateAccountEntity(CreateAccountDto dto, Customers customer, Branches branch) => new()
-        {
-            AccountType = dto.AccountType,
-                Balance = dto.Balance,
-                openDate = DateTime.Now,
-                BranchID = branch.BranchID,
-                Branches = branch,
-                Customers = customer,
-                Cards = null!
-        };
-        private static Cards CreateCardEntity(Accounts account, CreateAccountDto dto) => new()
-        {
-            CardNumber = Cards.GenerateCardNumber(),
-                CardType = dto.CardType,
-                ExpiryDate = DateTime.Now.AddYears(5),
-                CVV = Cards.GenerateCVV(),
-                Account = account
-        };
         private static void ValidateCustomerDto(CreateCustomerDto dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
@@ -109,6 +120,7 @@ namespace Bank_Project.Services
             if (string.IsNullOrWhiteSpace(dto.LastName)) throw new ArgumentException("Last name required");
             if (dto.Salary <= 0) throw new ArgumentException("Salary must be greater than 0");
         }
+
         private static void ValidateAccountDto(CreateAccountDto dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));

@@ -32,7 +32,7 @@ namespace Bank_Project.Models
         [ForeignKey(nameof(CUID))]
         public required Customers Customers { get; set; }
 
-        public required Cards Cards { get; set; }
+        public Cards? Cards { get; set; }
 
 
 

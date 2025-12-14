@@ -9,6 +9,8 @@ namespace Bank_Project.Services
     Task<Customers?> UpdateCustomerAsync(int id, Customers customer);
     Task<bool> DeleteCustomerAsync(int id);
     Task<List<Customers>> GetAllCustomersAsync();
+
     Task<Customers?> GetCustomerByIdAsync(int id); 
 }
+
 }
