@@ -39,7 +39,6 @@ namespace Bank_Project.Models
 
 
 
-
     } 
 }
 public class NonNegativeNumberAttribute : ValidationAttribute

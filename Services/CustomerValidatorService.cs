@@ -1,15 +1,10 @@
-using Bank_Project.DTOs;
+﻿using Bank_Project.DTOs;
 
-namespace Bank_Project.Validators
+namespace Bank_Project.Services
 {
-    public interface ICustomerValidator
+    public class CustomerValidatorService : ICustomerValidatorService
     {
-        void Validate(CreateCustomerDto dto);
-    }
-
-    public class CustomerValidator : ICustomerValidator
-    {
-        public void Validate(CreateCustomerDto dto)
+        public void ValidateCustomerDto(CreateCustomerDto dto)
         {
             if (dto == null) throw new ArgumentNullException(nameof(dto));
             if (string.IsNullOrWhiteSpace(dto.FirstName)) throw new ArgumentException("First name required");
@@ -17,4 +12,8 @@ namespace Bank_Project.Validators
             if (dto.Salary <= 0) throw new ArgumentException("Salary must be greater than 0");
         }
     }
+
+
+
 }
+

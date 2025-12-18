@@ -1,7 +1,6 @@
 ﻿using Bank_Project.Data;
 using Bank_Project.DTOs;
 using Bank_Project.Models;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
@@ -12,66 +11,33 @@ namespace Bank_Project.Services
     public class CustomerServices : ICustomerServices
     {
         private readonly AppDbContext _context;
-        private readonly IAccountService _accountService;
-        private readonly PasswordHasher<Cards> _cardHasher = new();
+        private readonly ICustomerValidatorService _validator;
 
-        public CustomerServices(AppDbContext context, IAccountService accountService)
+        public CustomerServices(AppDbContext context, ICustomerValidatorService validator)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _accountService = accountService ?? throw new ArgumentNullException(nameof(accountService));
+            _validator = validator;
         }
 
-        public async Task<Customers> AddCustomerAsync(CreateCustomerDto customerDto, CreateAccountDto accountDto)
+        public async Task<Customers> AddCustomerOnlyAsync(CreateCustomerDto customerDto)
         {
-            ValidateCustomerDto(customerDto);
-            ValidateAccountDto(accountDto);
+            _validator.ValidateCustomerDto(customerDto);
 
-            var branch = await _context.Branches.FindAsync(customerDto.BranchID);
-            if (branch == null) throw new Exception("Branch not found");
-
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var customer = new Customers
             {
-                // Create Customer
-                var customer = new Customers
-                {
-                    FirstName = customerDto.FirstName,
-                    SecondName = customerDto.SecondName,
-                    LastName = customerDto.LastName,
-                    PhoneNumber = customerDto.PhoneNumber,
-                    Address = customerDto.Address,
-                    Salary = customerDto.Salary
-                };
-                await _context.Customers.AddAsync(customer);
-                await _context.SaveChangesAsync();
+                FirstName = customerDto.FirstName,
+                SecondName = customerDto.SecondName,
+                LastName = customerDto.LastName,
+                PhoneNumber = customerDto.PhoneNumber,
+                Address = customerDto.Address,
+                Salary = customerDto.Salary,
+                Email = customerDto.Email,
+                Gender = customerDto.Gender
+            };
 
-                // Create Account using AccountService
-                var account = await _accountService.CreateAccountAsync(accountDto, customer, branch);
-
-                // Create Card
-                var card = new Cards
-                {
-                    CardNumber = Cards.GenerateCardNumber(),
-                    CardType = accountDto.CardType,
-                    ExpiryDate = DateTime.Now.AddYears(5),
-                    CVV = Cards.GenerateCVV(),
-                    Account = account
-                };
-                card.PasswordHash = _cardHasher.HashPassword(card, accountDto.CardPassword);
-                await _context.Cards.AddAsync(card);
-
-                // Link card to account
-                account.Cards = card;
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-                return customer;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            await _context.Customers.AddAsync(customer);
+            await _context.SaveChangesAsync();
+            return customer;
         }
 
         public async Task<Customers?> UpdateCustomerAsync(int id, Customers customer)
@@ -112,22 +78,9 @@ namespace Bank_Project.Services
             return existing;
         }
 
-        // ========================= Helper Methods =========================
-        private static void ValidateCustomerDto(CreateCustomerDto dto)
+        internal async Task GetCustomerByEmailAsync(object email)
         {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (string.IsNullOrWhiteSpace(dto.FirstName)) throw new ArgumentException("First name required");
-            if (string.IsNullOrWhiteSpace(dto.LastName)) throw new ArgumentException("Last name required");
-            if (dto.Salary <= 0) throw new ArgumentException("Salary must be greater than 0");
-        }
-
-        private static void ValidateAccountDto(CreateAccountDto dto)
-        {
-            if (dto == null) throw new ArgumentNullException(nameof(dto));
-            if (dto.Balance < 0) throw new ArgumentException("Balance cannot be negative");
-            if (string.IsNullOrWhiteSpace(dto.AccountType)) throw new ArgumentException("Account type required");
-            if (string.IsNullOrWhiteSpace(dto.CardType)) throw new ArgumentException("Card type required");
-            if (string.IsNullOrWhiteSpace(dto.CardPassword)) throw new ArgumentException("Card password required");
+            throw new NotImplementedException();
         }
     }
 }
