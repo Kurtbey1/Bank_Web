@@ -1,5 +1,6 @@
 ﻿using Bank_Project.Data;
 using Bank_Project.Services;
+using Bank_Project.Validators;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -26,9 +27,11 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 // Dependency Injection
 // -----------------------
 builder.Services.AddScoped<ICustomerValidatorService, CustomerValidatorService>();
-builder.Services.AddScoped<SignUpService>();
+builder.Services.AddScoped<EmployeeServices>();
 builder.Services.AddScoped<CustomerServices>();
 builder.Services.AddScoped<AccountService>();
+builder.Services.AddScoped<ILoanValidator, LoanValidator>();
+builder.Services.AddScoped<SignUpService>();
 builder.Services.AddScoped<CardService>();
 builder.Services.AddScoped<BankCoordinatorService>();
 builder.Services.AddScoped<AuthService>();
@@ -93,6 +96,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(jwtKey)
             )
+        };
+        options.Events = new JwtBearerEvents
+        {
+            OnMessageReceived = context =>
+            {
+                return Task.CompletedTask;
+            }
         };
     });
 

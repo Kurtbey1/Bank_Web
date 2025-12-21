@@ -122,5 +122,34 @@ namespace Bank_Project.Services
 
             return true;
         }
+
+        public async Task<string> SoftDeleteAsync(int customerId)
+        {
+            var employee = await _context.Employees
+                .Include(e => e.Subordinate)
+                .FirstOrDefaultAsync(e => e.EmpID == customerId);
+            if (employee == null)
+                return "Error : The Employee Isn't Found";
+
+            if (employee.Subordinate.Any(s => !s.IsDeleted))
+                return "You Must Reassign The Subordinate To Another Manager";
+
+            employee.IsDeleted = true;
+            await _context.SaveChangesAsync();
+
+            return "The Manager Has Been Deleted";
+        }
+
+        public async Task ReassignTheManagerAsync(int OldManagerId, int NewManagerId)
+        {
+            var subordinate = await _context.Employees.Where(e => e.SupervisorID == OldManagerId && !e.IsDeleted).ToListAsync();
+
+           foreach(var emp  in subordinate)
+            {
+                emp.SupervisorID = NewManagerId;
+            }
+
+           await _context.SaveChangesAsync();
+        }
     }
 }

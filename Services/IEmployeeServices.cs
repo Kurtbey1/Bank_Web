@@ -7,6 +7,7 @@ namespace Bank_Project.Services
     {
         
         Task<Loans> GiveLoanAsync(CreateLoanDto dto);
+        Task<string> SoftDeleteAsync(int customerId);
         Task<Loans>UpdateLoanDetailsAsync(int loanId,CreateLoanDto dto);
         Task<IEnumerable<Loans>> GetCustomersAllLoansAsync(int customerId);
         Task<Accounts?>CheckAccountCustomersAsync(int customerId,int loanId); 

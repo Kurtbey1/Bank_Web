@@ -21,45 +21,7 @@ namespace Bank_Project.Services
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
-        public async Task<Accounts> CreateAccountAsync(CreateAccountDto accountDto, Customers customer, Branches branch)
-        {
-            try
-            {
-                var account = new Accounts
-                {
-                    AccountType = accountDto.AccountType,
-                    Balance = accountDto.Balance,
-                    Branches = branch,
-                    Customers = customer,  // This links the Account to the Customer automatically
-                    openDate = DateTime.UtcNow
-                };
-
-                var hasher = new PasswordHasher<Accounts>();
-                account.PasswordHashed = hasher.HashPassword(account, accountDto.PasswordHashed);
-
-                await _context.Accounts.AddAsync(account);
-                await _context.SaveChangesAsync(); // This should now save the customer and the account
-
-                return account;
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error while creating account for customer {CustomerId}", customer.CUID);
-                throw new Exception("An error occurred while saving the entity changes. See the inner exception for details.", ex);
-            }
-        }
-
-        public async Task<Accounts> CreateFullAccountAsync(CreateAccountDto accountDto, Customers customer, Branches branch, CreateCardDto cardDto)
-        {
-            var account = await CreateAccountAsync(accountDto, customer, branch);
-
-            await _cardService.CreateCardAsync(account, cardDto);
-
-            await _context.SaveChangesAsync();
-            return account;
-        }
-
-        public async Task<Accounts> GetPrimaryAccountAsync(int customerId)
+        public async Task<AccountRespDto?> GetPrimaryAccountAsync(int customerId)
         {
             var account = await _context.Accounts
                 .Include(a => a.Cards)
@@ -70,7 +32,12 @@ namespace Bank_Project.Services
             if (account == null)
                 throw new Exception($"Customer with ID {customerId} has no account.");
 
-            return account;
+            return new AccountRespDto
+            {
+                AccountId = account.AccountID,
+                Balance = account.Balance,
+                AccountType = account.AccountType
+            };
         }
 
         public async Task IncreaseBalanceAsync(int customerId, int amount)
@@ -78,6 +45,9 @@ namespace Bank_Project.Services
             if (amount <= 0) throw new ArgumentException("Amount must be greater than 0");
 
             var account = await GetPrimaryAccountAsync(customerId);
+            if (account==null)
+                throw new Exception($"Customer with ID {customerId} not found.");
+
             account.Balance += amount;
             await _context.SaveChangesAsync();
         }
@@ -85,6 +55,10 @@ namespace Bank_Project.Services
         public async Task AdjustBalanceAsync(int customerId, int diff)
         {
             var account = await GetPrimaryAccountAsync(customerId);
+
+            if (account == null)
+                throw new Exception($"Customer with ID {customerId} has no account.");
+
             account.Balance += diff;
             await _context.SaveChangesAsync();
         }

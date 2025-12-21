@@ -40,7 +40,6 @@ namespace Bank_Project.Models
         public int Salary { get; set; }
 
         [Required]
-        [RegularExpression(@"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$", ErrorMessage = "Enter with good layout: example@domain.com")]
         public string Email { get; set; } = string.Empty;
 
         // Navigation properties

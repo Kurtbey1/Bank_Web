@@ -26,6 +26,10 @@ namespace Bank_Project.Models
         [Required]
         public string Position { get; set; } = string.Empty;
 
+        [Required]
+        
+        public bool IsDeleted { get; set; } = false;
+
 
         public int BranchID { get; set; }
 

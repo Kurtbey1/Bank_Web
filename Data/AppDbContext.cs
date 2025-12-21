@@ -129,6 +129,7 @@ namespace Bank_Project.Data
             });
 
             // ================== Employees ==================
+              
             modelBuilder.Entity<Employees>(entity =>
             {
                 entity.HasKey(e => e.EmpID);
@@ -148,6 +149,8 @@ namespace Bank_Project.Data
                       .WithMany(m => m.Subordinate)
                       .HasForeignKey(e => e.SupervisorID)
                       .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasQueryFilter(e => !e.IsDeleted);
 
                 entity.ToTable(t =>
                 {

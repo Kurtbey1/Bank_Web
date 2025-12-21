@@ -1,8 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Bank_Project.DTOs;
+﻿using Bank_Project.DTOs;
 using Bank_Project.Services;
+using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace Bank_Project.Controllers
 {
@@ -25,26 +26,19 @@ namespace Bank_Project.Controllers
         public async Task<IActionResult> Login([FromBody] LoginDto dto)
         {
             if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            {
+                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { Message = "Validation Failed", Errors = errors });
 
+            }
             try
             {
                 var token = await _authService.LoginAsync(dto);
 
-                Response.Cookies.Append("jwt", token, new CookieOptions
-                {
-                    HttpOnly = true,
-                    Secure = true,
-                    SameSite = SameSiteMode.Strict,
-                    Expires = DateTime.UtcNow.AddMinutes(60)
-                });
 
                 return Ok(new { Token = token });
             }
-            //catch (UnauthorizedAccessException)
-            //{
-            //    return Unauthorized(new { Message = "Invalid email or password" });
-            //}
+            
             catch (ArgumentNullException ex)
             {
                 return BadRequest(new { Message = ex.Message });
@@ -57,20 +51,22 @@ namespace Bank_Project.Controllers
         }
 
         [HttpPost("register")]
-public async Task<IActionResult> Register([FromBody] RegisterDto dto)
-{
-    if (!ModelState.IsValid)
-        return BadRequest(ModelState);
-
-    try
-    {
-        var customer = await _signUpService.RegisterAsync(dto.Customer, dto.Account, dto.Card);
-        return Ok(new { Message = "Account created successfully", CustomerId = customer.CUID });
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(500, new { Message = ex.Message });
-    }
-}
+        public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+        {
+            if (!ModelState.IsValid)
+            {
+                var errors = ModelState.Values.SelectMany(e => e.Errors).Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { Message = "Validation Failed", Errors = errors });
+            }
+            try
+            {
+                var customer = await _signUpService.RegisterAsync(dto.Customer, dto.Account, dto.Card);
+                return Ok(new { Message = "Account created successfully", CustomerId = customer.CUID });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { Message = "Internal Server Error", Details = ex.Message });
+            }
+        }
     }
 }
