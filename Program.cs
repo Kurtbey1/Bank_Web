@@ -9,23 +9,20 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// -----------------------
-// Controllers (API only)
-// -----------------------
+
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+Console.WriteLine("\n####################################################");
+Console.WriteLine(">>> DATABASE CONFIGURATION LOADED FROM JSON");
+Console.WriteLine($">>> TARGET DB: BankProjectDB");
+Console.WriteLine("####################################################\n");
+
 builder.Services.AddControllers();
 
-// -----------------------
-// Database
-// -----------------------
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(
-        builder.Configuration.GetConnectionString("DefaultConnection")
-    )
-);
+    options.UseSqlServer(connectionString));
 
-// -----------------------
-// Dependency Injection
-// -----------------------
 builder.Services.AddScoped<ICustomerValidatorService, CustomerValidatorService>();
 builder.Services.AddScoped<EmployeeServices>();
 builder.Services.AddScoped<CustomerServices>();
@@ -37,49 +34,45 @@ builder.Services.AddScoped<BankCoordinatorService>();
 builder.Services.AddScoped<AuthService>();
 builder.Services.AddScoped<JwtService>();
 
-// -----------------------
-// Swagger (Dev only)
-// -----------------------
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bank API", Version = "v1" });
+
+    var securityScheme = new OpenApiSecurityScheme
     {
-        Title = "Bank API",
-        Version = "v1"
+        Name = "JWT Authentication",
+        Description = "Enter JWT Bearer token **_only_**",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.Http,
+        Scheme = "bearer", 
+        BearerFormat = "JWT",
+        Reference = new OpenApiReference
+        {
+            Id = JwtBearerDefaults.AuthenticationScheme,
+            Type = ReferenceType.SecurityScheme
+        }
+    };
+    c.AddSecurityDefinition(securityScheme.Reference.Id, securityScheme);
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {securityScheme, new string[] { }}
     });
 });
 
-// -----------------------
-// CORS Configuration
-// -----------------------
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAnyOrigin", policy =>
     {
-        policy.AllowAnyOrigin()  // Allows requests from any origin
-              .AllowAnyMethod()  // Allows any HTTP method (GET, POST, etc.)
-              .AllowAnyHeader(); // Allows any headers
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
     });
 });
 
-// -----------------------
-// JWT Configuration
-// -----------------------
-var jwtKey = builder.Configuration["Jwt:Key"];
-var jwtIssuer = builder.Configuration["Jwt:Issuer"];
-var jwtAudience = builder.Configuration["Jwt:Audience"];
+//JWT
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsAVerySecretKeyForBankProject2025!";
+var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "BankApi";
+var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "BankUsers";
 
-if (string.IsNullOrWhiteSpace(jwtKey) ||
-    string.IsNullOrWhiteSpace(jwtIssuer) ||
-    string.IsNullOrWhiteSpace(jwtAudience))
-{
-    throw new InvalidOperationException("JWT configuration is missing in appsettings.json");
-}
-
-// -----------------------
-// Authentication
-// -----------------------
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -89,50 +82,30 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-
             ValidIssuer = jwtIssuer,
             ValidAudience = jwtAudience,
-
-            IssuerSigningKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey)
-            )
-        };
-        options.Events = new JwtBearerEvents
-        {
-            OnMessageReceived = context =>
-            {
-                return Task.CompletedTask;
-            }
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
-// -----------------------
-// Build App
-// -----------------------
 var app = builder.Build();
 
-// -----------------------
-// Middleware
-// -----------------------
+// 7.Middlewares
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bank API v1");
-        c.RoutePrefix = string.Empty;  // This makes Swagger the default page
+        c.RoutePrefix = string.Empty;
     });
 }
 
 app.UseHttpsRedirection();
-
 app.UseRouting();
-
-app.UseCors("AllowAnyOrigin"); // Apply CORS policy
-
+app.UseCors("AllowAnyOrigin");
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
 
 app.Run();

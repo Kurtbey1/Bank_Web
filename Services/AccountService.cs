@@ -62,12 +62,6 @@ namespace Bank_Project.Services
             account.Balance += diff;
             await _context.SaveChangesAsync();
         }
-        public async Task<Branches> GetBranchByIdAsync(int branchId)
-        {
-            var branch = await _context.Branches.FindAsync(branchId);
-            if (branch == null)
-                throw new Exception($"Branch with ID {branchId} not found.");
-            return branch;
-        }
+       
     }
 }  

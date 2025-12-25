@@ -6,7 +6,7 @@ namespace Bank_Project.Services
     public interface IEmployeeServices
     {
         
-        Task<Loans> GiveLoanAsync(CreateLoanDto dto);
+        Task<LoanResultDto> GiveLoanAsync(CreateLoanDto dto);
         Task<string> SoftDeleteAsync(int customerId);
         Task<Loans>UpdateLoanDetailsAsync(int loanId,CreateLoanDto dto);
         Task<IEnumerable<Loans>> GetCustomersAllLoansAsync(int customerId);

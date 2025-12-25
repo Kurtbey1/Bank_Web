@@ -18,7 +18,7 @@ namespace Bank_Project.Services
             _loanValidator = loanValidator;
         }
 
-        public async Task<Loans> GiveLoanAsync(CreateLoanDto dto)
+        public async Task<LoanResultDto> GiveLoanAsync(CreateLoanDto dto)
         {
             _loanValidator.Validate(dto);
 
@@ -52,8 +52,14 @@ namespace Bank_Project.Services
 
             await _context.Loans.AddAsync(loan);
             await _context.SaveChangesAsync();
+            return new LoanResultDto
+            {
+                CustomerId = customer.CUID,
+                AmountGranted = loan.LoanAmount, 
+                NewBalance = account.Balance,
+                intrestRate = loan.InterestRate,
+            };
 
-            return loan;
         }
 
         public async Task<Loans> UpdateLoanDetailsAsync(int loanId, CreateLoanDto dto)
