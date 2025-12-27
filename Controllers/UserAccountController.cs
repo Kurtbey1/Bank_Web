@@ -1,30 +1,24 @@
-﻿ using Bank_Project.Data;
-using Bank_Project.DTOs;
-using Bank_Project.Models;
-using Bank_Project.Services;
-using Microsoft.AspNetCore.Authorization;
+﻿using Bank_Project.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
+using Microsoft.Data.SqlClient;
+
 
 namespace Bank_Project.Controllers
 {
     [ApiController]
-    [Route("api/UserAccount")]
+    [Route("api/user-accounts")]
     //[Authorize]
     public class UserAccountController : ControllerBase
     {
-        private readonly BankCoordinatorService _coordinator;
         private readonly AccountService _accountService;
 
-        public UserAccountController(BankCoordinatorService coordinator, AccountService accountService)
+        public UserAccountController(AccountService accountService)
         {
-            _coordinator = coordinator;
             _accountService = accountService;
         }
 
-        [HttpGet("{CustomerId}")]
-        public async Task<IActionResult> GetPrimaryAccount([FromRoute] int CustomerId)
+        [HttpGet("primary/{customerId}")]
+        public async Task<IActionResult> GetPrimaryAccount([FromRoute] int customerId)
         {
             if (!ModelState.IsValid)
             {
@@ -33,23 +27,32 @@ namespace Bank_Project.Controllers
             }
 
             try { 
-            var customer = await _accountService.GetPrimaryAccountAsync(CustomerId);
+            var customer = await _accountService.GetPrimaryAccountAsync(customerId);
 
                 if (customer == null)
                 {
-                    return BadRequest(new { Message = $"No primary account found for Customer ID: {CustomerId}" });
+                    return NotFound(new { Message = $"No primary account found for Customer ID: {customerId}" });
                 }
 
                 return Ok(customer);
             }
             
-
-            catch (Exception ex){
-                return StatusCode(500, new { Message = "An error occurred", Details = ex.Message });
+            catch(SqlException)
+            {
+                return StatusCode(500, "Database Connection Failed.");
             }
+            catch (NullReferenceException ex) 
+            {
+                return StatusCode(500, new { Message = "Code error: Null reference detected.", Detail = ex.Message });
+            }
+            catch (Exception  ex)
+            {
+                return StatusCode(500, new { Message = "Sarver Error : "+ex.Message});
+   
+            }
+
+
+
         }
-
-
-
-    }
+    } 
 }

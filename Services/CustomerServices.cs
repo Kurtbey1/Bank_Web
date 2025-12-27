@@ -78,9 +78,6 @@ namespace Bank_Project.Services
             return existing;
         }
 
-        internal async Task GetCustomerByEmailAsync(object email)
-        {
-            throw new NotImplementedException();
-        }
+     
     }
 }
