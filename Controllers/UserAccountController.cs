@@ -6,7 +6,7 @@ namespace Bank_Project.Controllers
 {
     [ApiController]
     [Route("api/user-accounts")]
-    // [Authorize] // فعّلها لما تخلص Auth صح
+    // [Authorize]
     public class UserAccountController : ControllerBase
     {
         private readonly IAccountService _accountService;
@@ -34,8 +34,7 @@ namespace Bank_Project.Controllers
         [HttpPost("withdraw")]
         public async Task<IActionResult> Withdraw([FromBody] WithdrawReqDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+
 
             await _accountService.WithdrawAsync(
                 dto.customerId,
@@ -49,8 +48,7 @@ namespace Bank_Project.Controllers
         [HttpPost("transfer")]
         public async Task<IActionResult> Transfer([FromBody] TransfareReqDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
+            
 
             await _accountService.TransferAsync(
                 dto.senderId,
