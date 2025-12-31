@@ -109,12 +109,18 @@ namespace Bank_Project.Services
         
 
 
-        public async Task<Accounts?> CheckAccountCustomersAsync(int customerId, int accountId)
+        public async Task<IEnumerable<Accounts>> GetCustomerAccountsAsync(int customerId)
         {
-            return await _context.Accounts
-                .SingleOrDefaultAsync(a =>
-                    a.AccountID == accountId &&
-                    a.Customers.CUID == customerId);
+            var accounts = await _context.Accounts
+                .Where(a => a.CUID == customerId)
+                .ToListAsync();
+
+            if (accounts == null || !accounts.Any())
+             {
+                return Enumerable.Empty<Accounts>(); 
+             }
+
+           return accounts;
         }
 
         public async Task<bool> DeleteLoanAsync(int loanId)
