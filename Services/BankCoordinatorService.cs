@@ -10,11 +10,11 @@ public class BankCoordinatorService
 {
     
     private readonly CustomerServices _customerService;
-    private readonly AccountService _accountService;
+    private readonly IAccountService _accountService;
     private readonly CardService _cardService;
     private readonly AppDbContext _context;
 
-    public BankCoordinatorService(CustomerServices customerService, AccountService accountService, CardService cardService, AppDbContext context)
+    public BankCoordinatorService(CustomerServices customerService, IAccountService accountService, CardService cardService, AppDbContext context)
     {
         _customerService = customerService;
         _accountService = accountService;

@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 namespace Bank_Project.Models
 {
-
+    [Index(nameof(AccountID))]
     public class Accounts
     {
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -33,7 +33,7 @@ namespace Bank_Project.Models
         public required Customers Customers { get; set; }
 
         public Cards? Cards { get; set; }
-
+        public virtual ICollection<Transactions> Transactions { get; set; } = new List<Transactions>();
 
 
 

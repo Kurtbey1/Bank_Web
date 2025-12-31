@@ -1,12 +1,6 @@
-﻿ using Bank_Project.Data;
-using Bank_Project.DTOs;
-using Bank_Project.Models;
+﻿using Bank_Project.DTOs;
 using Bank_Project.Services;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
 namespace Bank_Project.Controllers
 {
     [ApiController]
@@ -14,42 +8,76 @@ namespace Bank_Project.Controllers
     //[Authorize]
     public class UserAccountController : ControllerBase
     {
-        private readonly BankCoordinatorService _coordinator;
-        private readonly AccountService _accountService;
+        private readonly IAccountService _accountService;
 
-        public UserAccountController(BankCoordinatorService coordinator, AccountService accountService)
+        public UserAccountController(IAccountService accountService)
         {
-            _coordinator = coordinator;
             _accountService = accountService;
         }
 
-        [HttpGet("{CustomerId}")]
-        public async Task<IActionResult> GetPrimaryAccount([FromRoute] int CustomerId)
+        [HttpPost("Deposit")]
+        public async Task<ActionResult> Deposit([FromBody] DepositReqDto dto)
         {
-            if (!ModelState.IsValid)
-            {
-                var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
-                return BadRequest(new { Message = "Validation Failed", Errors = errors });
-            }
+            await _accountService.DepositAsync(
+                dto.customerId,
+                dto.accountId,
+                dto.amount
+                
+            );
 
-            try { 
-            var customer = await _accountService.GetPrimaryAccountAsync(CustomerId);
+            return Ok(new { Message = "Deposit Successful" });
+        }
 
-                if (customer == null)
-                {
-                    return BadRequest(new { Message = $"No primary account found for Customer ID: {CustomerId}" });
-                }
 
-                return Ok(customer);
-            }
-            
+        [HttpPost("Withdraw")]
+        public async Task<ActionResult> Withdraw([FromBody] DepositReqDto dto)
+        {
+            await _accountService.WithdrawAsync(
+               dto.customerId,
+               dto.accountId,
+               dto.amount
 
-            catch (Exception ex){
-                return StatusCode(500, new { Message = "An error occurred", Details = ex.Message });
-            }
+           );
+
+            return Ok(new { Message = "Withdraw Successful" });
         }
 
 
 
+        [HttpPost("Transfer")]
+        public async Task<ActionResult> Transfer([FromBody] TransfareReqDto dto)
+        {
+            await _accountService.TransferAsync(
+               dto.senderId,
+               dto.reciverId,
+               dto.fromAccount,
+               dto.toAccount,
+               dto.amount
+
+           );
+
+            return Ok(new { Message = "Transfer Money Successful" });
+        }
+
+
+
+
+
+        [HttpGet("customers/{CustomerId}")]
+        public async Task<IActionResult> GetPrimaryAccount([FromRoute] int CustomerId)
+        {
+         
+            
+           var customer = await _accountService.GetPrimaryAccountAsync(CustomerId);
+
+           if (customer == null)
+           {
+               return NotFound(new { Message = $"No primary account found for Customer ID: {CustomerId}" });
+           }
+
+           return Ok(customer);
+               
+        }
+        
     }
 }

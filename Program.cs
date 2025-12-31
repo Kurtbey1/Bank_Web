@@ -9,24 +9,20 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-
+// 1. Database Configuration
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-Console.WriteLine("\n####################################################");
-Console.WriteLine(">>> DATABASE CONFIGURATION LOADED FROM JSON");
-Console.WriteLine($">>> TARGET DB: BankProjectDB");
-Console.WriteLine("####################################################\n");
 
 builder.Services.AddControllers();
 
+// 2. Add DbContext
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
+// 3. Register Services (Cleaned & Optimized)
 builder.Services.AddScoped<ICustomerValidatorService, CustomerValidatorService>();
 builder.Services.AddScoped<EmployeeServices>();
 builder.Services.AddScoped<CustomerServices>();
-builder.Services.AddScoped<AccountService>();
+builder.Services.AddScoped<IAccountService, AccountService>(); // سجلنا الواجهة مع التنفيذ فقط
 builder.Services.AddScoped<ILoanValidator, LoanValidator>();
 builder.Services.AddScoped<SignUpService>();
 builder.Services.AddScoped<CardService>();
@@ -38,25 +34,22 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Bank API", Version = "v1" });
-
-    var securityScheme = new OpenApiSecurityScheme
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Name = "JWT Authentication",
-        Description = "Enter JWT Bearer token **_only_**",
-        In = ParameterLocation.Header,
+        Name = "Authorization",
         Type = SecuritySchemeType.Http,
-        Scheme = "bearer", 
+        Scheme = "bearer",
         BearerFormat = "JWT",
-        Reference = new OpenApiReference
+        In = ParameterLocation.Header,
+        Description = "Enter JWT token only."
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement {
         {
-            Id = JwtBearerDefaults.AuthenticationScheme,
-            Type = ReferenceType.SecurityScheme
+            new OpenApiSecurityScheme {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            new string[] {}
         }
-    };
-    c.AddSecurityDefinition(securityScheme.Reference.Id, securityScheme);
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {securityScheme, new string[] { }}
     });
 });
 
@@ -68,11 +61,8 @@ builder.Services.AddCors(options =>
     });
 });
 
-//JWT
+// 4. JWT Configuration
 var jwtKey = builder.Configuration["Jwt:Key"] ?? "ThisIsAVerySecretKeyForBankProject2025!";
-var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "BankApi";
-var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "BankUsers";
-
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -82,24 +72,39 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = jwtIssuer,
-            ValidAudience = jwtAudience,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "BankApi",
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "BankUsers",
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey))
         };
     });
 
 var app = builder.Build();
 
-// 7.Middlewares
-if (app.Environment.IsDevelopment())
+// 5. Database Auto-Migration (The Professional Way)
+using (var scope = app.Services.CreateScope())
 {
-    app.UseSwagger();
-    app.UseSwaggerUI(c =>
+    var services = scope.ServiceProvider;
+    try
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bank API v1");
-        c.RoutePrefix = string.Empty;
-    });
+        var context = services.GetRequiredService<AppDbContext>();
+        // استبدلنا EnsureCreated بـ Migrate لحل مشكلة الجداول الناقصة
+        context.Database.Migrate();
+        Console.WriteLine(">>> Database Migrated and Synced Successfully.");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($">>> DATABASE ERROR: {ex.Message}");
+    }
 }
+
+// 6. Middlewares Order (Crucial!)
+// حذفنا شرط IsDevelopment مؤقتاً لضمان فتح Swagger تحت أي ظرف
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Bank API v1");
+    c.RoutePrefix = "swagger"; // سيعمل الآن على رابط /swagger
+});
 
 app.UseHttpsRedirection();
 app.UseRouting();

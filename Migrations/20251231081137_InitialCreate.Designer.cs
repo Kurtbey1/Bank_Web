@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Bank_Project.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20251215051156_InitialCreate")]
+    [Migration("20251231081137_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -39,6 +39,7 @@ namespace Bank_Project.Migrations
                         .HasColumnType("nvarchar(50)");
 
                     b.Property<int>("Balance")
+                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<int>("BranchID")
@@ -55,6 +56,8 @@ namespace Bank_Project.Migrations
                         .HasColumnType("date");
 
                     b.HasKey("AccountID");
+
+                    b.HasIndex("AccountID");
 
                     b.HasIndex("BranchID");
 
@@ -73,13 +76,11 @@ namespace Bank_Project.Migrations
 
                     b.Property<string>("BranchAddress")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("BranchName")
                         .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("BranchID");
 
@@ -99,18 +100,15 @@ namespace Bank_Project.Migrations
 
                     b.Property<string>("CVV")
                         .IsRequired()
-                        .HasMaxLength(3)
-                        .HasColumnType("nvarchar(3)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CardNumber")
                         .IsRequired()
-                        .HasMaxLength(16)
-                        .HasColumnType("nvarchar(16)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CardType")
                         .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("CustomersCUID")
                         .HasColumnType("int");
@@ -120,8 +118,7 @@ namespace Bank_Project.Migrations
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
-                        .HasMaxLength(99)
-                        .HasColumnType("nvarchar(99)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("CardID");
 
@@ -143,8 +140,7 @@ namespace Bank_Project.Migrations
 
                     b.Property<string>("Address")
                         .IsRequired()
-                        .HasMaxLength(25)
-                        .HasColumnType("nvarchar(25)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("BirthDate")
                         .HasColumnType("date");
@@ -161,25 +157,23 @@ namespace Bank_Project.Migrations
 
                     b.Property<string>("Gender")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Salary")
+                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<string>("SecondName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.HasKey("CUID");
 
@@ -202,18 +196,18 @@ namespace Bank_Project.Migrations
 
                     b.Property<string>("FirstName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Gender")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("LastName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
                         .IsRequired()
@@ -224,12 +218,12 @@ namespace Bank_Project.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("Salary")
+                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<string>("SecondName")
                         .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("SupervisorID")
                         .HasColumnType("int");
@@ -240,10 +234,7 @@ namespace Bank_Project.Migrations
 
                     b.HasIndex("SupervisorID");
 
-                    b.ToTable("Employees", t =>
-                        {
-                            t.HasCheckConstraint("CK_Salary_Up_FiveHundred", "Salary > 1");
-                        });
+                    b.ToTable("Employees");
                 });
 
             modelBuilder.Entity("Bank_Project.Models.Grants", b =>
@@ -276,13 +267,14 @@ namespace Bank_Project.Migrations
                         .HasColumnType("int");
 
                     b.Property<DateTime>("EndDate")
-                        .HasColumnType("date");
+                        .HasColumnType("datetime2");
 
                     b.Property<decimal>("InterestRate")
                         .HasPrecision(5, 2)
                         .HasColumnType("decimal(5,2)");
 
                     b.Property<int>("LoanAmount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<string>("LoanStatus")
@@ -290,10 +282,11 @@ namespace Bank_Project.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("PaymentAmount")
+                        .HasPrecision(18, 2)
                         .HasColumnType("int");
 
                     b.Property<DateTime>("StartDate")
-                        .HasColumnType("date");
+                        .HasColumnType("datetime2");
 
                     b.HasKey("LoanID");
 
@@ -301,12 +294,36 @@ namespace Bank_Project.Migrations
 
                     b.HasIndex("EmpID");
 
-                    b.ToTable("Loans", t =>
-                        {
-                            t.HasCheckConstraint("CK_Loans_LoanAmount_Positive", "LoanAmount >= 1");
+                    b.ToTable("Loans");
+                });
 
-                            t.HasCheckConstraint("CK_Payments_PaymentAmount_Positive", "PaymentAmount >= 1");
-                        });
+            modelBuilder.Entity("Bank_Project.Models.Transactions", b =>
+                {
+                    b.Property<int>("TransactID")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TransactID"));
+
+                    b.Property<int>("AccountID")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Amount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("TransactionType")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("TransactID");
+
+                    b.HasIndex("AccountID");
+
+                    b.ToTable("Transactions");
                 });
 
             modelBuilder.Entity("Bank_Project.Models.Accounts", b =>
@@ -366,13 +383,13 @@ namespace Bank_Project.Migrations
                     b.HasOne("Bank_Project.Models.Employees", "Employee")
                         .WithMany("Grants")
                         .HasForeignKey("EmpID")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Bank_Project.Models.Loans", "Loan")
                         .WithMany("Grants")
                         .HasForeignKey("LoanID")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Employee");
@@ -399,9 +416,22 @@ namespace Bank_Project.Migrations
                     b.Navigation("Employees");
                 });
 
+            modelBuilder.Entity("Bank_Project.Models.Transactions", b =>
+                {
+                    b.HasOne("Bank_Project.Models.Accounts", "Account")
+                        .WithMany("Transactions")
+                        .HasForeignKey("AccountID")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Account");
+                });
+
             modelBuilder.Entity("Bank_Project.Models.Accounts", b =>
                 {
                     b.Navigation("Cards");
+
+                    b.Navigation("Transactions");
                 });
 
             modelBuilder.Entity("Bank_Project.Models.Branches", b =>

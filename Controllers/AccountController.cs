@@ -19,7 +19,6 @@ namespace Bank_Project.Controllers
         {
             _authService = authService;
             _signUpService = signUpService;
-
         }
 
         [HttpPost("login")]
@@ -29,7 +28,6 @@ namespace Bank_Project.Controllers
             {
                 var errors = ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage).ToList();
                 return BadRequest(new { Message = "Validation Failed", Errors = errors });
-
             }
             try
             {
