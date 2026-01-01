@@ -14,7 +14,7 @@ namespace Bank_Project.Controllers
         public UserAccountController(IAccountService accountService)
         {
             _accountService = accountService;
-        }
+        }   
 
         [HttpPost("deposit")]
         public async Task<IActionResult> Deposit([FromBody] DepositReqDto dto)
