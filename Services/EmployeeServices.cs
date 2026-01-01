@@ -11,15 +11,19 @@ namespace Bank_Project.Services
     {
         private readonly AppDbContext _context;
         private readonly ILoanValidator _loanValidator;
+        private readonly Logger<EmployeeServices> _logger;
 
-        public EmployeeServices(AppDbContext context, ILoanValidator loanValidator)
+        public EmployeeServices(AppDbContext context, ILoanValidator loanValidator, Logger<EmployeeServices> logger)
         {
             _context = context;
             _loanValidator = loanValidator;
+            _logger = logger;
         }
 
         public async Task<LoanResultDto> GiveLoanAsync(CreateLoanDto dto)
         {
+            _logger.LogInformation("Creating Loan");
+
             _loanValidator.Validate(dto);
 
             var customer = await _context.Customers
@@ -52,6 +56,7 @@ namespace Bank_Project.Services
 
             await _context.Loans.AddAsync(loan);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Loan Creatend Successfully for customer with id {cId} by customer with ID{eId}",dto.CustomerId,dto.EmpID);
             return new LoanResultDto
             {
                 CustomerId = customer.CUID,
@@ -64,6 +69,8 @@ namespace Bank_Project.Services
 
         public async Task<Loans> UpdateLoanDetailsAsync(int loanId, CreateLoanDto dto)
         {
+            _logger.LogInformation("Updating Loan");
+
             _loanValidator.Validate(dto);
 
             var loan = await _context.Loans
@@ -91,17 +98,22 @@ namespace Bank_Project.Services
             loan.Employees = emp;
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation("The Loan Updated Sucsessfully");
             return loan;
         }
 
         public async Task<IEnumerable<Loans>> GetCustomersAllLoansAsync(int customerId)
         {
+            _logger.LogInformation("Getting All Loans For Customer With Id {ID}",customerId);
             var exists = await _context.Customers
                 .AnyAsync(c => c.CUID == customerId);
 
             if (!exists)
+            {
+                _logger.LogWarning("Collecting Data Feailed: Customer With Id {id} Isn't Found",customerId);
                 throw new Exception("Customer not found");
-
+            }
+            _logger.LogInformation("Process Run Sucessfully");
             return await _context.Loans
                 .Where(l => l.CUID == customerId)
                 .ToListAsync();
@@ -111,6 +123,7 @@ namespace Bank_Project.Services
 
         public async Task<IEnumerable<Accounts>> GetCustomerAccountsAsync(int customerId)
         {
+
             var accounts = await _context.Accounts
                 .Where(a => a.CUID == customerId)
                 .ToListAsync();
@@ -119,6 +132,7 @@ namespace Bank_Project.Services
              {
                 return Enumerable.Empty<Accounts>(); 
              }
+            _logger.LogInformation("Process Run Sucessfully");
 
            return accounts;
         }

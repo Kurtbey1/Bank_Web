@@ -42,6 +42,7 @@ namespace Bank_Project.Models
         [Required]
         public string Email { get; set; } = string.Empty;
 
+
         // Navigation properties
         public ICollection<Accounts> Accounts { get; set; } = new List<Accounts>();
         public ICollection<Cards> Cards { get; set; } = new List<Cards>();

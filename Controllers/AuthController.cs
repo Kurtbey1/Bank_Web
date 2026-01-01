@@ -16,34 +16,32 @@ public class AuthController : ControllerBase
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login([FromBody] LoginDto dto)
+    public async Task<IActionResult> LoginAsync(LoginDto dto)
     {
-        try
-        {
-            var token = await _authService.LoginAsync(dto);
-            return Ok(new { Token = token });
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return Unauthorized(new { Message = "Invalid email or password." });
-        }
-        catch (Exception)
-        {
-            return StatusCode(500, new { Message = "An internal error occurred." });
-        }
+
+        var token = await _authService.LoginAsync(dto);
+
+        if (string.IsNullOrEmpty(token))
+            return Unauthorized(new { Message = "Invalid credentials." });
+
+        return Ok(new { Token = token });
+        
+
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register([FromBody] RegisterDto dto)
+    public async Task<IActionResult> RegisterAsync(RegisterDto dto)
     {
-        try
+        var customer = await _signUpService.RegisterAsync(dto.Customer, dto.Account, dto.Card);
+
+        if (customer == null)
+            return BadRequest(new { Message = "Registration failed. Email might already exist." });
+
+        return Created(string.Empty, new
         {
-            var customer = await _signUpService.RegisterAsync(dto.Customer, dto.Account, dto.Card);
-            return Ok(new { Message = "Account created successfully", CustomerId = customer.CUID });
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { Message = "Registration failed", Details = ex.Message });
-        }
+            Message = "Account created successfully",
+            CustomerId = customer.CUID
+        });
+
     }
 }

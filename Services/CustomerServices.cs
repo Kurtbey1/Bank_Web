@@ -12,15 +12,18 @@ namespace Bank_Project.Services
     {
         private readonly AppDbContext _context;
         private readonly ICustomerValidatorService _validator;
+        private readonly ILogger <CustomerServices> _logger;
 
-        public CustomerServices(AppDbContext context, ICustomerValidatorService validator)
+        public CustomerServices(AppDbContext context, ICustomerValidatorService validator, ILogger<CustomerServices> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _validator = validator;
+            _logger = logger;
         }
 
         public async Task<Customers> AddCustomerOnlyAsync(CreateCustomerDto customerDto)
         {
+            _logger.LogInformation("Adding Customer...");
             _validator.ValidateCustomerDto(customerDto);
 
             var customer = new Customers
@@ -37,13 +40,21 @@ namespace Bank_Project.Services
 
             await _context.Customers.AddAsync(customer);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Customer Added Succsessfully");
             return customer;
         }
 
         public async Task<Customers?> UpdateCustomerAsync(int id, Customers customer)
         {
+            _logger.LogInformation("Attempting to update customer {Id}", id);
+
             var existing = await _context.Customers.FindAsync(id);
-            if (existing == null) throw new KeyNotFoundException($"Customer with id {id} not found.");
+            if (existing == null)
+            {
+                _logger.LogWarning("Update failed: Customer {Id} not found", id);
+                throw new KeyNotFoundException($"Customer with id {id} not found.");
+            }
 
             existing.FirstName = customer.FirstName;
             existing.SecondName = customer.SecondName;
@@ -53,16 +64,24 @@ namespace Bank_Project.Services
             existing.Salary = customer.Salary;
 
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Customer {Id} updated successfully", id);
             return existing;
         }
 
         public async Task<bool> DeleteCustomerAsync(int id)
         {
+            _logger.LogInformation("Deleting Customer");
             var existing = await _context.Customers.FindAsync(id);
-            if (existing == null) return false;
-
+            if (existing == null)
+            {
+                _logger.LogWarning("Deleting Failed: Customer With ID {ID} Is not Found", id);
+                return false;
+            }
             _context.Customers.Remove(existing);
             await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Customer Deleted Sucsessfully");
             return true;
         }
 
@@ -73,8 +92,16 @@ namespace Bank_Project.Services
 
         public async Task<Customers?> GetCustomerByIdAsync(int id)
         {
+            _logger.LogInformation("Getting The Customer Data");
+
             var existing = await _context.Customers.FindAsync(id);
-            if (existing == null) throw new KeyNotFoundException($"Customer with id {id} not found.");
+            if (existing == null)
+            {
+                _logger.LogWarning("Deleting Failed: Customer With ID {ID} Is not Found", id);
+                throw new KeyNotFoundException($"Customer with id {id} not found.");
+            }
+
+            _logger.LogInformation("Process Is Done Sucsessfully");
             return existing;
         }
 

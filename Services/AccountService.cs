@@ -2,6 +2,7 @@
 using Bank_Project.DTOs;
 using Bank_Project.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Identity.Client;
 
 namespace Bank_Project.Services
 {
@@ -21,7 +22,7 @@ namespace Bank_Project.Services
         private async Task<Accounts> GetAccountEntityAsync(int customerId, int accountid)
         {
             var account = await _context.Accounts
-                .FirstOrDefaultAsync(a => a.Customers.CUID == customerId );
+                .FirstOrDefaultAsync(a => a.AccountID == accountid && a.Customers.CUID == customerId);
 
             if (account == null)
             {
