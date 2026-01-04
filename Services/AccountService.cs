@@ -21,6 +21,7 @@ namespace Bank_Project.Services
 
         private async Task<Accounts> GetAccountEntityAsync(int customerId, int accountid)
         {
+
             var account = await _context.Accounts
                 .FirstOrDefaultAsync(a => a.AccountID == accountid && a.Customers.CUID == customerId);
 
@@ -32,7 +33,7 @@ namespace Bank_Project.Services
 
             return account;
         }
-
+        
         public async Task<AccountRespDto?> GetPrimaryAccountAsync(int customerId)
         {
             _logger.LogInformation("Fetching primary account for Customer {Id}", customerId);
