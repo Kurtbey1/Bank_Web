@@ -2,9 +2,7 @@
 using Bank_Project.DTOs;
 using Bank_Project.Models;
 using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+
 
 namespace Bank_Project.Services
 {
@@ -41,7 +39,7 @@ namespace Bank_Project.Services
             await _context.Customers.AddAsync(customer);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Customer Added Succsessfully");
+            _logger.LogInformation("Customer Added Successfully");
             return customer;
         }
 
@@ -81,7 +79,7 @@ namespace Bank_Project.Services
             _context.Customers.Remove(existing);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Customer Deleted Sucsessfully");
+            _logger.LogInformation("Customer Deleted Successfully");
             return true;
         }
 
@@ -101,7 +99,7 @@ namespace Bank_Project.Services
                 throw new KeyNotFoundException($"Customer with id {id} not found.");
             }
 
-            _logger.LogInformation("Process Is Done Sucsessfully");
+            _logger.LogInformation("Process Is Done Successfully");
             return existing;
         }
 

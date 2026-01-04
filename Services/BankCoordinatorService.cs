@@ -9,40 +9,53 @@ using Microsoft.EntityFrameworkCore;
 public class BankCoordinatorService
 {
     
-    private readonly CustomerServices _customerService;
+    private readonly ICustomerServices _customerService;
     private readonly IAccountService _accountService;
     private readonly CardService _cardService;
     private readonly AppDbContext _context;
+    private readonly ILogger<BankCoordinatorService> _logger;
 
-    public BankCoordinatorService(CustomerServices customerService, IAccountService accountService, CardService cardService, AppDbContext context)
+    public BankCoordinatorService(ICustomerServices customerService, IAccountService accountService, CardService cardService, AppDbContext context, ILogger<BankCoordinatorService> logger)
     {
         _customerService = customerService;
         _accountService = accountService;
         _cardService = cardService;
         _context = context;
+        _logger = logger;
+        _cardService = cardService;
+        _context = context;
     }
 
     public async Task<Customers> AddCustomerWithAccountAsync(
+        
     CreateCustomerDto customerDto,
     CreateAccountDto accountDto,
     CreateCardDto cardDto)
     {
-        if (customerDto == null) throw new ArgumentNullException(nameof(customerDto));
-        if (accountDto == null) throw new ArgumentNullException(nameof(accountDto));
-        if (cardDto == null) throw new ArgumentNullException(nameof(cardDto));
+        _logger.LogInformation("Starting process to add customer with account and card.");
+        if (customerDto == null)
+        {
+            _logger.LogError("Customer DTO is null."); 
+            throw new ArgumentNullException(nameof(customerDto));
+        }
+        if (accountDto == null){ 
+            _logger.LogError("Account DTO is null.");
+        throw new ArgumentNullException(nameof(accountDto));
+        }
+        if (cardDto == null) {
+        throw new ArgumentNullException(nameof(cardDto));
+        }
 
         using var transaction = await _context.Database.BeginTransactionAsync();
         try
         {
-            // 1️⃣ Create customer
             var customer = await _customerService.AddCustomerOnlyAsync(customerDto);
 
-            // 2️⃣ Get branch
             var branch = await _context.Branches.FindAsync(accountDto.BranchId);
-            if (branch == null)
+            if (branch == null){
+                _logger.LogWarning("Branch with ID {BranchId} not found", accountDto.BranchId);
                 throw new Exception($"Branch with ID {accountDto.BranchId} not found.");
-
-            // 3️⃣ Create account using Customer and Branch objects
+            }
             var account = new Accounts
             {
                 AccountType = accountDto.AccountType,
@@ -58,7 +71,6 @@ public class BankCoordinatorService
             await _context.Accounts.AddAsync(account);
             await _context.SaveChangesAsync(); // Save account to generate AccountID
 
-            // 4️⃣ Create card using the Account object
             var card = new Cards
             {
                 CardType = cardDto.CardType,
@@ -75,6 +87,7 @@ public class BankCoordinatorService
             await _context.SaveChangesAsync(); // Save card
 
             await transaction.CommitAsync();
+            _logger.LogInformation("Successfully added customer with account and card. Customer ID: {CustomerId}", customer.CUID);
             return customer;
         }
         catch (DbUpdateException ex)

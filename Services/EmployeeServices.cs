@@ -11,13 +11,13 @@ namespace Bank_Project.Services
     {
         private readonly AppDbContext _context;
         private readonly ILoanValidator _loanValidator;
-        private readonly Logger<EmployeeServices> _logger;
+        private readonly ILogger<EmployeeServices> _logger;
 
-        public EmployeeServices(AppDbContext context, ILoanValidator loanValidator, Logger<EmployeeServices> logger)
+        public EmployeeServices(AppDbContext context, ILoanValidator loanValidator, ILogger<EmployeeServices> logger)
         {
-            _context = context;
-            _loanValidator = loanValidator;
-            _logger = logger;
+            _context = context ?? throw new ArgumentNullException(nameof(context));
+            _loanValidator = loanValidator?? throw new ArgumentNullException(nameof(loanValidator));
+            _logger = logger?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<LoanResultDto> GiveLoanAsync(CreateLoanDto dto)
@@ -34,7 +34,7 @@ namespace Bank_Project.Services
             var emp = await _context.Employees.FindAsync(dto.EmpID)
                 ?? throw new Exception("Employee not found");
 
-            var account = customer.Accounts?.FirstOrDefault()
+            var account = customer.Accounts.FirstOrDefault()
                 ?? throw new Exception("Customer has no account");
 
             var loan = new Loans
@@ -56,7 +56,7 @@ namespace Bank_Project.Services
 
             await _context.Loans.AddAsync(loan);
             await _context.SaveChangesAsync();
-            _logger.LogInformation("Loan Creatend Successfully for customer with id {cId} by customer with ID{eId}",dto.CustomerId,dto.EmpID);
+            _logger.LogInformation("Loan Created Successfully for customer with id {OldID} by customer with ID{NewID}",dto.CustomerId,dto.EmpID);
             return new LoanResultDto
             {
                 CustomerId = customer.CUID,
@@ -82,7 +82,7 @@ namespace Bank_Project.Services
             var emp = await _context.Employees.FindAsync(dto.EmpID)
                 ?? throw new KeyNotFoundException("Employee not found");
 
-            var account = loan.Customer.Accounts?.FirstOrDefault()
+            var account = loan.Customer.Accounts.FirstOrDefault()
                 ?? throw new Exception("Customer has no account");
 
             account.Balance += dto.LoanAmount - loan.LoanAmount;
@@ -91,14 +91,14 @@ namespace Bank_Project.Services
             loan.LoanType = dto.LoanType;
             loan.LoanAmount = dto.LoanAmount;
             loan.PaymentAmount = dto.PaymentAmount;
-            loan.InterestRate = dto.InterestRate;
+            loan.InterestRate = dto.InterestRate;             
             loan.StartDate = dto.StartDate;
             loan.EndDate = dto.EndDate;
             loan.EmpID = dto.EmpID;
             loan.Employees = emp;
 
             await _context.SaveChangesAsync();
-            _logger.LogInformation("The Loan Updated Sucsessfully");
+            _logger.LogInformation("The Loan Updated Successfully");
             return loan;
         }
 
@@ -110,10 +110,10 @@ namespace Bank_Project.Services
 
             if (!exists)
             {
-                _logger.LogWarning("Collecting Data Feailed: Customer With Id {id} Isn't Found",customerId);
+                _logger.LogWarning("Collecting Data Failed: Customer With Id {id} Isn't Found",customerId);
                 throw new Exception("Customer not found");
             }
-            _logger.LogInformation("Process Run Sucessfully");
+            _logger.LogInformation("Process Run Successfully");
             return await _context.Loans
                 .Where(l => l.CUID == customerId)
                 .ToListAsync();
@@ -121,18 +121,19 @@ namespace Bank_Project.Services
         
 
 
-        public async Task<IEnumerable<Accounts>> GetCustomerAccountsAsync(int customerId)
-        {
+    public async Task<IEnumerable<Accounts>> GetCustomerAccountsAsync(int customerId)
+    {
 
-            var accounts = await _context.Accounts
-                .Where(a => a.CUID == customerId)
-                .ToListAsync();
+        var accounts = await _context.Accounts
+            .Where(a => a.CUID == customerId)
+            .ToListAsync();
 
-            if (accounts == null || !accounts.Any())
-             {
-                return Enumerable.Empty<Accounts>(); 
-             }
-            _logger.LogInformation("Process Run Sucessfully");
+        if (!accounts.Any())
+        { 
+         _logger.LogWarning("No accounts found for customer with ID {ID}", customerId);
+        return Enumerable.Empty<Accounts>(); 
+        }
+        _logger.LogInformation("Process Run Successfully");
 
            return accounts;
         }
@@ -141,19 +142,23 @@ namespace Bank_Project.Services
         {
             var loan = await _context.Loans.FindAsync(loanId);
             if (loan == null)
+            {
+                _logger.LogWarning("Delete Failed: Loan With ID {ID} Is Not Found", loanId);
                 return false;
+            }
 
             _context.Loans.Remove(loan);
             await _context.SaveChangesAsync();
-
+            _logger.LogInformation("Loan Deleted Successfully");
             return true;
         }
 
-        public async Task<string> SoftDeleteAsync(int customerId)
+        public async Task<string> SoftDeleteAsync(int empId)
         {
+            _logger.LogInformation("Soft Deleting Employee with ID {ID}", empId);
             var employee = await _context.Employees
                 .Include(e => e.Subordinate)
-                .FirstOrDefaultAsync(e => e.EmpID == customerId);
+                .FirstOrDefaultAsync(e => e.EmpID == empId);
             if (employee == null)
                 return "Error : The Employee Isn't Found";
 
@@ -162,19 +167,20 @@ namespace Bank_Project.Services
 
             employee.IsDeleted = true;
             await _context.SaveChangesAsync();
-
-            return "The Manager Has Been Deleted";
+            _logger.LogInformation("Employee with ID {ID} soft deleted successfully", empId);
+            return "The Employee Has Been Deleted";
         }
 
-        public async Task ReassignTheManagerAsync(int OldManagerId, int NewManagerId)
+        public async Task ReassignTheManagerAsync(int oldManagerId, int newManagerId)
         {
-            var subordinate = await _context.Employees.Where(e => e.SupervisorID == OldManagerId && !e.IsDeleted).ToListAsync();
+            _logger.LogInformation("Reassigning subordinates from Manager {OldID} to Manager {NewID}", oldManagerId, newManagerId);
+            var subordinate = await _context.Employees.Where(e => e.SupervisorID == oldManagerId && !e.IsDeleted).ToListAsync();
 
            foreach(var emp  in subordinate)
             {
-                emp.SupervisorID = NewManagerId;
+                emp.SupervisorID = newManagerId;
             }
-
+            _logger.LogInformation("Reassignment completed successfully");
            await _context.SaveChangesAsync();
         }
     }

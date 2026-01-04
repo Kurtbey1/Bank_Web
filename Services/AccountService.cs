@@ -2,20 +2,17 @@
 using Bank_Project.DTOs;
 using Bank_Project.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Identity.Client;
 
 namespace Bank_Project.Services
 {
     public class AccountService : IAccountService
     {
         private readonly AppDbContext _context;
-        private readonly CardService _cardService;
         private readonly ILogger<AccountService> _logger;
 
-        public AccountService(AppDbContext context, CardService cardService, ILogger<AccountService> logger)
+        public AccountService(AppDbContext context, ILogger<AccountService> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
-            _cardService = cardService ?? throw new ArgumentNullException(nameof(cardService));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 

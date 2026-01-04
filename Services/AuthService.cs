@@ -21,7 +21,7 @@ namespace Bank_Project.Services
             _passwordHasher = new PasswordHasher<Accounts>();
         }
 
-        public async Task<string> LoginAsync(LoginDto dto)
+        public async Task<string> LoginAsync(LoginDto? dto)
         {
             if (dto == null)
             {
@@ -35,7 +35,7 @@ namespace Bank_Project.Services
                 .Include(a => a.Customers)
                 .FirstOrDefaultAsync(a => a.Customers.Email == dto.Email);
 
-            if (account == null || account.Customers == null)
+            if (account == null )
             {
                 _logger.LogWarning("Login denied: User {Email} not found", dto.Email);
                 throw new UnauthorizedAccessException("Invalid email or password");

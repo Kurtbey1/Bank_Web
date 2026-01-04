@@ -19,9 +19,6 @@ namespace Bank_Project.Controllers
         [HttpPost("deposit")]
         public async Task<IActionResult> Deposit([FromBody] DepositReqDto dto)
         {
-            if (!ModelState.IsValid)
-                return BadRequest(ModelState);
-
             await _accountService.DepositAsync(
                 dto.customerId,
                 dto.accountId,
