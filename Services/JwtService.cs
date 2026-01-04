@@ -10,16 +10,19 @@ namespace Bank_Project.Services
     {
         private readonly IConfiguration _config;
         private readonly byte[] _key;
+        private readonly ILogger<JwtService> _logger;
 
-        public JwtService(IConfiguration config)
+        public JwtService(IConfiguration config, ILogger<JwtService> logger)
         {
             _config = config;
+            _logger = logger;
             var secret = _config["Jwt:Key"] ?? throw new InvalidOperationException("Jwt:Key is missing in configuration!");
             _key = Encoding.UTF8.GetBytes(secret);
         }
 
         public string GenerateToken(int cuid, string role)
         {
+            _logger.LogInformation("Generating JWT token for CUID: {CUID} with role: {Role}", cuid, role);
             var claims = new[]
             {
                 new Claim(ClaimTypes.NameIdentifier, cuid.ToString()),
@@ -36,6 +39,7 @@ namespace Bank_Project.Services
                 signingCredentials: new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256)
             );
 
+            _logger.LogInformation("JWT token generated successfully for CUID: {CUID}", cuid);
             return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
         }
     }

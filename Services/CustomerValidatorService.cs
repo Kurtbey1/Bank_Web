@@ -4,7 +4,6 @@ namespace Bank_Project.Services
 {
     public class CustomerValidatorService : ICustomerValidatorService
     {
-        private readonly Logger<CustomerValidatorService>? _logger;
         public void ValidateCustomerDto(CreateCustomerDto dto)
         {
             if (dto == null)

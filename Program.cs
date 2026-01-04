@@ -19,16 +19,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(connectionString));
 
 // 3. Register Services (Cleaned & Optimized)
+builder.Services.AddScoped<JwtService>();
 builder.Services.AddScoped<ICustomerValidatorService, CustomerValidatorService>();
-builder.Services.AddScoped<EmployeeServices>();
-builder.Services.AddScoped<CustomerServices>();
-builder.Services.AddScoped<IAccountService, AccountService>(); // سجلنا الواجهة مع التنفيذ فقط
 builder.Services.AddScoped<ILoanValidator, LoanValidator>();
+
+// 2. تسجيل الواجهات (تأكد أن ICustomerServices و CustomerServices في نفس الـ Namespace)
+builder.Services.AddScoped<ICustomerServices, CustomerServices>();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IAccountService, AccountService>();
+
+// 3. تسجيل الخدمات المعقدة (التي تعتمد على ما سبق)
+builder.Services.AddScoped<BankCoordinatorService>();
 builder.Services.AddScoped<SignUpService>();
 builder.Services.AddScoped<CardService>();
-builder.Services.AddScoped<BankCoordinatorService>();
-builder.Services.AddScoped<AuthService>();
-builder.Services.AddScoped<JwtService>();
+builder.Services.AddScoped<EmployeeServices>();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
