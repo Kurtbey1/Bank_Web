@@ -26,3 +26,4 @@ namespace Bank_Project.Models
     }
     
 }
+        
