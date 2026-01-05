@@ -20,7 +20,7 @@ namespace Bank_Project.Services
         {
 
             var account = await _context.Accounts
-                .FirstOrDefaultAsync(a => a.AccountID == accountid && a.Customers.CUID == customerId);
+                .FirstOrDefaultAsync(a => a.AccountID == accountid && a.CUID == customerId);
 
             if (account == null)
             {
@@ -39,7 +39,7 @@ namespace Bank_Project.Services
                 .Include(a => a.Cards)
                 .Include(a => a.Customers)
                 .Include(a => a.Branches)
-                .FirstOrDefaultAsync(a => a.Customers.CUID == customerId);
+                .FirstOrDefaultAsync(a => a.CUID == customerId);
 
             if (account == null)
             {
