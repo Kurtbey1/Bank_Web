@@ -12,7 +12,7 @@ namespace Bank_Project.Models
         public int AccountID { get; set; }
 
         [Required]
-        public string AccountType { get; set; }=string.Empty;
+        public string AccountType { get; set; } = string.Empty;
         [Required]
         [NonNegativeNumber]
         public int Balance { get; set; }
@@ -21,7 +21,7 @@ namespace Bank_Project.Models
         [Required]
         public string PasswordHashed { get; set; } = string.Empty;
         [Required]
-        public int CUID{ get; set; }
+        public int CUID { get; set; }
         [Required]
         [Column(TypeName = "date")]
         public DateTime openDate { get; set; }
@@ -29,7 +29,9 @@ namespace Bank_Project.Models
         [ForeignKey(nameof(BranchID))]
         public required Branches Branches { get; set; }
 
-        public Customers Customers { get; set; } = null!;
+        [ForeignKey(nameof(CUID))]
+        public required Customers Customer { get; set; }
+
         public Cards? Cards { get; set; }
         public virtual ICollection<Transactions> Transactions { get; set; } = new List<Transactions>();
 
@@ -37,7 +39,8 @@ namespace Bank_Project.Models
 
 
 
-    } 
+
+    }
 }
 public class NonNegativeNumberAttribute : ValidationAttribute
 {

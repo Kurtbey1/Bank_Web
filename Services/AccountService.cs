@@ -18,9 +18,10 @@ namespace Bank_Project.Services
 
         private async Task<Accounts> GetAccountEntityAsync(int customerId, int accountid)
         {
+            Console.WriteLine(_context.Database.GetDbConnection().Database);
 
             var account = await _context.Accounts
-                .FirstOrDefaultAsync(a => a.AccountID == accountid && a.CUID == customerId);
+                .FirstOrDefaultAsync(a => a.AccountID == accountid && a.Customer.CUID == customerId);
 
             if (account == null)
             {
@@ -34,12 +35,13 @@ namespace Bank_Project.Services
         public async Task<AccountRespDto?> GetPrimaryAccountAsync(int customerId)
         {
             _logger.LogInformation("Fetching primary account for Customer {Id}", customerId);
+            Console.WriteLine(_context.Database.GetDbConnection().Database);
 
             var account = await _context.Accounts
                 .Include(a => a.Cards)
-                .Include(a => a.Customers)
+                .Include(a => a.Customer)
                 .Include(a => a.Branches)
-                .FirstOrDefaultAsync(a => a.CUID == customerId);
+                .FirstOrDefaultAsync(a => a.Customer.CUID == customerId);
 
             if (account == null)
             {

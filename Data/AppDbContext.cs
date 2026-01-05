@@ -1,11 +1,12 @@
-﻿﻿using Bank_Project.Models;
+﻿using Bank_Project.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Bank_Project.Data
 {
     public class AppDbContext : DbContext
     {
-        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+        public AppDbContext(DbContextOptions<AppDbContext> options)
+            : base(options) { }
 
         public DbSet<Accounts> Accounts { get; set; }
         public DbSet<Branches> Branches { get; set; }
@@ -18,84 +19,70 @@ namespace Bank_Project.Data
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
-            // ================== 1. Customers ==================
-            modelBuilder.Entity<Customers>(entity =>
-            {
-                entity.HasKey(c => c.CUID);
-                entity.Property(c => c.CUID).ValueGeneratedOnAdd().UseIdentityColumn();
-                entity.Property(c => c.FirstName).IsRequired().HasMaxLength(50);
-                entity.Property(c => c.Email).IsRequired().HasMaxLength(70);
-                entity.Property(c => c.Salary).HasPrecision(18, 2); // دقة مالية
+            base.OnModelCreating(modelBuilder);
 
-                entity.ToTable(t =>
-                {
-                    t.HasCheckConstraint("CK_Customer_Phone", "PhoneNumber LIKE '07[0-9]%' AND LEN(PhoneNumber) = 10");
-                });
+            // =========================
+            // Customers -> Accounts
+            // =========================
+            modelBuilder.Entity<Accounts>()
+                .HasOne(a => a.Customer)
+                .WithMany(c => c.Accounts)
+                .HasForeignKey(a => a.CUID)
+                .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasMany(c => c.Accounts).WithOne(a => a.Customers).HasForeignKey(a => a.CUID).OnDelete(DeleteBehavior.Cascade);
-                entity.HasMany(c => c.Loans).WithOne(l => l.Customer).HasForeignKey(l => l.CUID).OnDelete(DeleteBehavior.Cascade);
-            });
+            // =========================
+            // Accounts -> Cards (ONE TO ONE)
+            // =========================
+            modelBuilder.Entity<Cards>()
+                .HasOne(c => c.Account)
+                .WithOne(a => a.Cards)
+                .HasForeignKey<Cards>(c => c.AccountID)
+                .OnDelete(DeleteBehavior.Cascade);
 
-            // ================== 2. Employees (Fixed Global Filter & Precision) ==================
-            modelBuilder.Entity<Employees>(entity =>
-            {
-                entity.HasKey(e => e.EmpID);
-                entity.Property(e => e.Salary).HasPrecision(18, 2);
+            // =========================
+            // Accounts -> Transactions
+            // =========================
+            modelBuilder.Entity<Transactions>()
+                .HasOne(t => t.Account)
+                .WithMany(a => a.Transactions)
+                .HasForeignKey(t => t.AccountID)
+                .OnDelete(DeleteBehavior.Restrict);
 
-                // حل مشكلة التحذير: جعلنا العلاقة مع القروض اختيارية برمجياً لتجنب تعارض الفلتر
-                entity.HasQueryFilter(e => !e.IsDeleted);
+            // =========================
+            // Customers -> Loans
+            // =========================
+            modelBuilder.Entity<Loans>()
+                .HasOne(l => l.Customer)
+                .WithMany(c => c.Loans)
+                .HasForeignKey(l => l.CUID)
+                .OnDelete(DeleteBehavior.Cascade);
 
-                entity.HasOne(e => e.Supervisor)
-                      .WithMany(m => m.Subordinate)
-                      .HasForeignKey(e => e.SupervisorID)
-                      .OnDelete(DeleteBehavior.Restrict);
-            });
+            // =========================
+            // Employees (Self Reference)
+            // =========================
+            modelBuilder.Entity<Employees>()
+                .HasOne(e => e.Supervisor)
+                .WithMany(e => e.Subordinate)
+                .HasForeignKey(e => e.SupervisorID)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // ================== 3. Accounts ==================
-            modelBuilder.Entity<Accounts>(entity =>
-            {
-                entity.HasKey(a => a.AccountID);
-                entity.Property(a => a.Balance).HasPrecision(18, 2); // دقة بنكية
-                entity.Property(a => a.AccountType).IsRequired().HasMaxLength(50);
-            });
+            // =========================
+            // Grants (Many-to-Many)
+            // =========================
+            modelBuilder.Entity<Grants>()
+                .HasKey(g => new { g.LoanID, g.EmpID });
 
-            // ================== 4. Loans ==================
-            modelBuilder.Entity<Loans>(entity =>
-            {
-                entity.HasKey(l => l.LoanID);
-                entity.Property(l => l.LoanAmount).HasPrecision(18, 2);
-                entity.Property(l => l.PaymentAmount).HasPrecision(18, 2);
-                entity.Property(l => l.InterestRate).HasPrecision(5, 2);
+            modelBuilder.Entity<Grants>()
+                .HasOne(g => g.Loan)
+                .WithMany(l => l.Grants)
+                .HasForeignKey(g => g.LoanID)
+                .OnDelete(DeleteBehavior.Restrict);
 
-                // حل مشكلة التحذير: تحديد سلوك الحذف لمنع التعارض مع فلتر الموظفين
-                entity.HasOne(l => l.Customer).WithMany(c => c.Loans).HasForeignKey(l => l.CUID);
-            });
-
-            // ================== 5. Grants (Join Table) ==================
-            modelBuilder.Entity<Grants>(entity =>
-            {
-                entity.HasKey(g => new { g.LoanID, g.EmpID });
-
-                // منع الحذف المتسلسل لتجنب مشاكل الـ Global Filter
-                entity.HasOne(g => g.Employee).WithMany(e => e.Grants).HasForeignKey(g => g.EmpID).OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(g => g.Loan).WithMany(l => l.Grants).HasForeignKey(g => g.LoanID).OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // ================== 6. Transactions (Fixed Performance) ==================
-            modelBuilder.Entity<Transactions>(entity =>
-            {
-                entity.HasKey(t => t.TransactID);
-                entity.Property(t => t.Amount).HasPrecision(18, 2);
-
-                entity.HasOne(t => t.Account)
-                      .WithMany(a => a.Transactions)
-                      .HasForeignKey(t => t.AccountID)
-                      .OnDelete(DeleteBehavior.Restrict);
-            });
-
-            // بقية الكيانات (Branches, Cards)
-            modelBuilder.Entity<Branches>().HasKey(b => b.BranchID);
-            modelBuilder.Entity<Cards>().HasKey(c => c.CardID);
+            modelBuilder.Entity<Grants>()
+                .HasOne(g => g.Employee)
+                .WithMany(e => e.Grants)
+                .HasForeignKey(g => g.EmpID)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

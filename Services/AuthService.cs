@@ -32,8 +32,8 @@ namespace Bank_Project.Services
             _logger.LogInformation("Login attempt for user: {Email}", dto.Email);
 
             var account = await _context.Accounts
-                .Include(a => a.Customers)
-                .FirstOrDefaultAsync(a => a.Customers.Email == dto.Email);
+                .Include(a => a.Customer)
+                .FirstOrDefaultAsync(a => a.Customer.Email == dto.Email);
 
             if (account == null )
             {
@@ -50,7 +50,7 @@ namespace Bank_Project.Services
             }
 
             _logger.LogInformation("Login successful for {Email}", dto.Email);
-            return _jwtService.GenerateToken(account.Customers.CUID, "Customer");
+            return _jwtService.GenerateToken(account.Customer.CUID, "Customer");
         }
     }
 }

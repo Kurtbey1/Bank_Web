@@ -61,7 +61,7 @@ public class BankCoordinatorService
                 AccountType = accountDto.AccountType,
                 Balance = accountDto.Balance,
                 Branches = branch,
-                Customers = customer,
+                Customer = customer,
                 openDate = DateTime.UtcNow
             };
 
