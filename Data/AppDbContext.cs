@@ -32,7 +32,7 @@ namespace Bank_Project.Data
                     t.HasCheckConstraint("CK_Customer_Phone", "PhoneNumber LIKE '07[0-9]%' AND LEN(PhoneNumber) = 10");
                 });
 
-                entity.HasMany(c => c.Accounts).WithOne(a => a.Customers).HasForeignKey(a => a.CUID).OnDelete(DeleteBehavior.Cascade);
+                entity.HasMany(c => c.Accounts).WithOne(a => a.Customer).HasForeignKey(a => a.CUID).OnDelete(DeleteBehavior.Cascade);
                 entity.HasMany(c => c.Loans).WithOne(l => l.Customer).HasForeignKey(l => l.CUID).OnDelete(DeleteBehavior.Cascade);
             });
 
@@ -54,9 +54,10 @@ namespace Bank_Project.Data
             // ================== 3. Accounts ==================
             modelBuilder.Entity<Accounts>(entity =>
             {
-                entity.HasKey(a => a.AccountID);
-                entity.Property(a => a.Balance).HasPrecision(18, 2); // دقة بنكية
-                entity.Property(a => a.AccountType).IsRequired().HasMaxLength(50);
+                 entity.HasOne(a => a.Customer)
+                .WithMany(c => c.Accounts)
+                .HasForeignKey(a => a.CUID)
+                .HasConstraintName("FK_Accounts_Customers");
             });
 
             // ================== 4. Loans ==================

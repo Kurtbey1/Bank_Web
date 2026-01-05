@@ -21,6 +21,7 @@ namespace Bank_Project.Models
         [Required]
         public string PasswordHashed { get; set; } = string.Empty;
         [Required]
+        [Column("CUID")]
         public int CUID{ get; set; }
         [Required]
         [Column(TypeName = "date")]
@@ -29,9 +30,8 @@ namespace Bank_Project.Models
         [ForeignKey(nameof(BranchID))]
         public required Branches Branches { get; set; }
 
-        [ForeignKey(nameof(CUID))]
-        public required Customers Customers { get; set; }
-
+        [ForeignKey("CUID")]
+        public virtual Customers Customer { get; set; } = null!;
         public Cards? Cards { get; set; }
         public virtual ICollection<Transactions> Transactions { get; set; } = new List<Transactions>();
 
