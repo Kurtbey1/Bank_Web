@@ -68,4 +68,4 @@ dotnet run
 Test: Open https://localhost:xxxx/swagger to explore the endpoints.
 
 👨‍💻 Developed By
-[Your Name] Backend Developer / Associate Software Engineer
+Abd Elrahman Alqudah Backend Developer / Associate Software Engineer
