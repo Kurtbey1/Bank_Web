@@ -15,7 +15,7 @@ namespace Bank_Project.Models
         public string AccountType { get; set; } = string.Empty;
         [Required]
         [NonNegativeNumber]
-        public int Balance { get; set; }
+        public decimal Balance { get; set; }
         [Required]
         public int BranchID { get; set; }
         [Required]

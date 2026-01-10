@@ -17,7 +17,7 @@ namespace Bank_Project.Models
         public string Gender { get; set; } = string.Empty;
         [Required]
         [Range(1,int.MaxValue,ErrorMessage ="the salary must be greater than 0")]
-        public int Salary{ get; set; }
+        public float Salary{ get; set; }
 
         [Required]
         [RegularExpression(@"^07\d{8}$", ErrorMessage = "Phone number must start with 07 and be 10 digits long.")]

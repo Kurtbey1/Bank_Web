@@ -57,9 +57,9 @@ namespace Bank_Project.Data
                 .HasForeignKey(l => l.CUID)
                 .OnDelete(DeleteBehavior.Cascade);
 
-            // =========================
+            // ==========================
             // Employees (Self Reference)
-            // =========================
+            // ==========================
             modelBuilder.Entity<Employees>()
                 .HasOne(e => e.Supervisor)
                 .WithMany(e => e.Subordinate)
@@ -67,7 +67,7 @@ namespace Bank_Project.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             // =========================
-            // Grants (Many-to-Many)
+            // Grants (Many-to-Many) 
             // =========================
             modelBuilder.Entity<Grants>()
                 .HasKey(g => new { g.LoanID, g.EmpID });

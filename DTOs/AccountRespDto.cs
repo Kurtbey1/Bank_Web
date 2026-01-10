@@ -5,6 +5,6 @@
         public int AccountId {  get; set; }
         public string AccountType{ get; set; } = string.Empty;
          
-        public int Balance { get; set; }
+        public decimal  Balance { get; set; }
     }
 }
